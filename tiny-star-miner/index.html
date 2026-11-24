@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Tiny Star Miner</title>
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+<style>
+:root{--bg:#0b0d1a;--panel:#151a30;--panel2:#1d2340;--line:#2b3360;--text:#e8ebff;--dim:#9aa3d0;--gold:#ffd166;--cyan:#5ee7ff;--pink:#ff6bcb;--green:#7cf29a;--red:#ff7b7b}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+#app{display:flex;height:100%}
+#left{flex:1;position:relative;min-width:0}
+canvas{display:block;width:100%;height:100%;cursor:pointer;touch-action:manipulation}
+#hud{position:absolute;top:12px;left:0;right:0;text-align:center;pointer-events:none;padding:0 10px}
+#ore{font-size:clamp(26px,4vw,44px);font-weight:800;color:var(--gold);text-shadow:0 0 18px rgba(255,209,102,.45)}
+#ops{font-size:15px;color:var(--dim);margin-top:2px}
+#combo{margin-top:6px;font-size:20px;font-weight:900;color:#ff9f43;text-shadow:0 0 14px rgba(255,120,40,.8);height:26px;transition:transform .08s}
+#buffs{margin-top:4px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.buff{background:rgba(255,107,203,.18);border:1px solid var(--pink);color:#ffd0f0;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:700}
+#goal{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:min(360px,80%);pointer-events:none;text-align:center;font-size:12px;color:var(--dim)}
+#goalbar{height:8px;background:var(--panel2);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-top:4px}
+#goalfill{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--pink));transition:width .3s}
+#right{width:400px;background:var(--panel);border-left:2px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#tabs{display:flex;border-bottom:2px solid var(--line)}
+.tab{flex:1;padding:12px 4px;background:none;border:none;color:var(--dim);font-weight:700;font-size:13px;cursor:pointer;position:relative;font-family:inherit}
+.tab.on{color:var(--text);background:var(--panel2)}
+.tab .dot{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--pink);display:none}
+.tab.has .dot{display:block}
+#content{flex:1;overflow-y:auto;padding:10px;min-height:0}
+#buymode{display:flex;gap:6px;margin-bottom:10px}
+#buymode button{flex:1;padding:7px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);font-weight:700;cursor:pointer;font-family:inherit}
+#buymode button.on{background:var(--cyan);color:#06101f;border-color:var(--cyan)}
+.item{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;cursor:pointer;transition:transform .05s,border-color .15s}
+.item:hover{border-color:var(--cyan)}
+.item:active{transform:scale(.985)}
+.item.off{opacity:.55}
+.item.mystery{opacity:.4;cursor:default}
+.icon{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-size:24px;flex-shrink:0}
+.info{flex:1;min-width:0}
+.name{font-weight:700}
+.desc{font-size:12px;color:var(--dim);margin:1px 0}
+.cost{font-size:13px;color:var(--gold);font-weight:700}
+.cost.no{color:var(--red)}
+.count{font-size:26px;font-weight:800;color:rgba(255,255,255,.28);min-width:36px;text-align:right}
+.empty{color:var(--dim);text-align:center;padding:30px 10px;line-height:1.6}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;line-height:1.55}
+.card h3{margin-bottom:6px}
+.big{font-size:22px;font-weight:800;color:var(--pink)}
+.btn{background:var(--cyan);color:#06101f;border:none;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-size:15px;font-family:inherit}
+.btn.pink{background:var(--pink)}
+.btn.alt{background:var(--panel);color:var(--text);border:1px solid var(--line)}
+.btn:disabled{background:#3a4066;color:#8088b0;cursor:default}
+.wide{width:100%;margin-top:8px}
+.stat{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line);font-size:14px}
+.stat span:last-child{color:var(--gold);font-weight:700}
+.ach{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.ach div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:12px;color:var(--dim)}
+.ach div.got{border-color:var(--gold);color:var(--text)}
+.ach b{display:block;font-size:13px}
+#toasts{position:fixed;bottom:16px;left:16px;display:flex;flex-direction:column;gap:8px;z-index:20;pointer-events:none;max-width:min(360px,80vw)}
+.toast{background:var(--panel2);border:1px solid var(--cyan);padding:10px 14px;border-radius:12px;font-size:14px;animation:tin .25s ease-out;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.toast.gold{border-color:var(--gold)}
+.toast.pink{border-color:var(--pink)}
+@keyframes tin{from{transform:translateY(10px);opacity:0}}
+#modal{position:fixed;inset:0;background:rgba(5,6,15,.78);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}
+#modal.show{display:flex}
+.box{background:var(--panel);border:2px solid var(--gold);border-radius:18px;padding:24px;max-width:430px;width:100%;text-align:center}
+.box h2{color:var(--gold);margin-bottom:10px}
+.box p{color:var(--dim);margin-bottom:16px;line-height:1.55}
+.box .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+@media (max-width:820px){
+ #app{flex-direction:column}
+ #left{flex:none;height:44%}
+ #right{width:100%;flex:1;border-left:none;border-top:2px solid var(--line)}
+ #ops{font-size:13px}
+ #goal{bottom:8px}
+ #toasts{top:86px;bottom:auto;left:50%;transform:translateX(-50%);width:92vw;max-width:92vw}
+ .toast{font-size:13px;padding:8px 12px}
+}
+@media (min-width:821px){#toasts{bottom:64px}}
+</style>
+</head>
+<body>
+<div id="app">
+ <div id="left">
+  <canvas id="cv"></canvas>
+  <div id="hud"><div id="ore">0 ore</div><div id="ops">0 ore/sec</div><div id="combo"></div><div id="buffs"></div></div>
+  <div id="goal"><span id="goaltext">Goal: build the Dyson Sphere</span><div id="goalbar"><div id="goalfill"></div></div></div>
+ </div>
+ <div id="right">
+  <div id="tabs">
+   <button class="tab on" data-tab="build">Machines<i class="dot"></i></button>
+   <button class="tab" data-tab="upg">Upgrades<i class="dot"></i></button>
+   <button class="tab" data-tab="nova">Supernova<i class="dot"></i></button>
+   <button class="tab" data-tab="stats">Stats<i class="dot"></i></button>
+  </div>
+  <div id="content"></div>
+ </div>
+</div>
+<div id="toasts"></div>
+<div id="modal"><div class="box" id="modalbox"></div></div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------------------------------------------------------------- data
+const SAVE_KEY = 'tinystarminer_v1';
+const R = 1.15;
+const GOAL = 1e12;
+const NOVA_MIN = 1e9;
+
+const BUILDINGS = [
+  { id:'bot',      name:'Drill Bot',       icon:'🤖', color:'#5ee7ff', cost:15,    ops:0.2,   desc:'A tiny robot that chips away ore.' },
+  { id:'laser',    name:'Laser Drill',     icon:'🔦', color:'#ff7b7b', cost:120,   ops:1.6,   desc:'Melts rock with focused light.' },
+  { id:'drone',    name:'Cargo Drone',     icon:'🛸', color:'#7cf29a', cost:1300,  ops:12,    desc:'Hauls ore from far-away rocks.' },
+  { id:'tug',      name:'Asteroid Tug',    icon:'🚀', color:'#ffd166', cost:14000, ops:100,    desc:'Drags whole asteroids into orbit.' },
+  { id:'refinery', name:'Plasma Refinery', icon:'🏭', color:'#ff9f43', cost:1.6e5, ops:850,   desc:'Turns space dust into pure ore.' },
+  { id:'moon',     name:'Moon Digger',     icon:'🌙', color:'#c8d6ff', cost:1.9e6, ops:7500,  desc:'Mines an entire moon. Slowly.' },
+  { id:'gravity',  name:'Gravity Well',    icon:'🌀', color:'#a66bff', cost:2.4e7, ops:70000, desc:'Pulls ore out of the void itself.' },
+  { id:'forge',    name:'Star Forge',      icon:'⭐', color:'#ff6bcb', cost:3.2e8, ops:7e5, desc:'Harvests ore from dying stars.' },
+];
+
+const UPGRADES = [];
+BUILDINGS.forEach((b, i) => {
+  [[1, 10, 'I'], [5, 50, 'II'], [25, 500, 'III'], [75, 5e4, 'IV']].forEach(([need, mult, tier]) => {
+    UPGRADES.push({ id: b.id + '_' + tier, name: b.name + ' ' + tier, icon: b.icon, color: b.color,
+      desc: b.name + 's produce 2x ore.', cost: b.cost * mult,
+      req: s => s.owned[i] >= need, apply: m => { m.b[i] *= 2; } });
+  });
+});
+UPGRADES.push(
+  { id:'click1', name:'Sharper Pick',      icon:'⛏️', desc:'Clicks give 2x ore.', cost:100, req:s => s.clicks >= 10, apply:m => { m.clickMul *= 2; } },
+  { id:'click2', name:'Power Gloves',      icon:'🧤', desc:'Clicks give 2x ore.', cost:2000, req:s => s.clicks >= 100, apply:m => { m.clickMul *= 2; } },
+  { id:'click3', name:'Seismic Tap',       icon:'💥', desc:'Clicks also give 1% of your ore/sec.', cost:5e4, req:s => s.clicks >= 300, apply:m => { m.clickOps += 0.01; } },
+  { id:'click4', name:'Ore Sense',         icon:'👁️', desc:'Clicks give +2% of your ore/sec.', cost:5e6, req:s => s.clicks >= 800, apply:m => { m.clickOps += 0.02; } },
+  { id:'click5', name:'Core Breaker',      icon:'☄️', desc:'Clicks give +3% of your ore/sec.', cost:5e9, req:s => s.clicks >= 2000, apply:m => { m.clickOps += 0.03; } },
+  { id:'glob1',  name:'Better Navigation', icon:'🧭', desc:'All production +50%.', cost:2e5, req:s => s.runEarned >= 5e4, apply:m => { m.all *= 1.5; } },
+  { id:'glob2',  name:'AI Foreman',        icon:'🧠', desc:'All production +50%.', cost:2e7, req:s => s.runEarned >= 5e6, apply:m => { m.all *= 1.5; } },
+  { id:'glob3',  name:'Quantum Logistics', icon:'⚛️', desc:'All production x2.', cost:2e9, req:s => s.runEarned >= 5e8, apply:m => { m.all *= 2; } },
+  { id:'glob4',  name:'Hyperlanes',        icon:'🌌', desc:'All production x2.', cost:2e11, req:s => s.runEarned >= 5e10, apply:m => { m.all *= 2; } },
+  { id:'comet1', name:'Comet Radar',       icon:'📡', desc:'Comets appear twice as often.', cost:5e4, req:s => s.comets >= 1, apply:m => { m.cometFreq *= 2; } },
+  { id:'comet2', name:'Comet Magnet',      icon:'🧲', desc:'Comet effects last twice as long.', cost:5e6, req:s => s.comets >= 3, apply:m => { m.cometDur *= 2; } },
+  { id:'dyson',  name:'Dyson Sphere',      icon:'🌞', desc:'Wrap a star in mining machines. Production x3. YOU WIN!', cost:GOAL, req:s => s.runEarned >= GOAL * 0.1, apply:m => { m.all *= 3; }, final:true },
+);
+const UPG_BY_ID = Object.fromEntries(UPGRADES.map(u => [u.id, u]));
+
+const totalOwned = s => s.owned.reduce((a, b) => a + b, 0);
+const ACH = [
+  { id:'c1',    name:'First Strike',      desc:'Click the asteroid',          test:s => s.clicks >= 1 },
+  { id:'c100',  name:'Busy Hands',        desc:'Click 100 times',             test:s => s.clicks >= 100 },
+  { id:'c1000', name:'Click Machine',     desc:'Click 1,000 times',           test:s => s.clicks >= 1000 },
+  { id:'e1k',   name:'Pocket Change',     desc:'Earn 1K ore in total',        test:s => s.totalEarned >= 1e3 },
+  { id:'e1m',   name:'Millionaire Miner', desc:'Earn 1M ore in total',        test:s => s.totalEarned >= 1e6 },
+  { id:'e1b',   name:'Billion Boulders',  desc:'Earn 1B ore in total',        test:s => s.totalEarned >= 1e9 },
+  { id:'e1t',   name:'Trillion Club',     desc:'Earn 1T ore in total',        test:s => s.totalEarned >= 1e12 },
+  { id:'b10',   name:'Robot Army',        desc:'Own 10 Drill Bots',           test:s => s.owned[0] >= 10 },
+  { id:'ball',  name:'Full Fleet',        desc:'Own every kind of machine',   test:s => s.owned.every(x => x > 0) },
+  { id:'b100',  name:'Industrial Era',    desc:'Own 100 machines',            test:s => totalOwned(s) >= 100 },
+  { id:'b500',  name:'Mega Fleet',        desc:'Own 500 machines',            test:s => totalOwned(s) >= 500 },
+  { id:'com1',  name:'Wish Granted',      desc:'Catch a comet',               test:s => s.comets >= 1 },
+  { id:'com10', name:'Comet Chaser',      desc:'Catch 10 comets',             test:s => s.comets >= 10 },
+  { id:'combo5', name:'On Fire!',         desc:'Reach a x5 click combo',      test:s => s.maxCombo >= 5 },
+  { id:'met50', name:'Meteor Catcher',    desc:'Smash 50 meteors',            test:s => s.meteors >= 50 },
+  { id:'pir1',  name:'Pirate Hunter',     desc:'Defeat a space pirate',       test:s => s.pirates >= 1 },
+  { id:'pir10', name:'Space Sheriff',     desc:'Defeat 10 space pirates',     test:s => s.pirates >= 10 },
+  { id:'sn1',   name:'Supernova!',        desc:'Go supernova once',           test:s => s.supernovas >= 1 },
+  { id:'win',   name:'Star Wrapper',      desc:'Build the Dyson Sphere',      test:s => s.won },
+];
+
+// ---------------------------------------------------------------- platform (CrazyGames SDK data module, localStorage fallback)
+let CG = null;
+async function initPlatform() {
+  try {
+    const sdk = window.CrazyGames && window.CrazyGames.SDK;
+    if (!sdk) return;
+    await Promise.race([sdk.init(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))]);
+    if (sdk.environment === 'crazygames' || sdk.environment === 'local') CG = sdk;
+  } catch (e) { CG = null; }
+}
+function storeGet(k) {
+  if (CG) {
+    try {
+      const v = CG.data.getItem(k);
+      if (v !== null && v !== undefined) return v;
+    } catch (e) { /* fall back */ }
+  }
+  try { return localStorage.getItem(k); } catch (e) { return null; }
+}
+function storeSet(k, v) {
+  if (CG) { try { CG.data.setItem(k, v); } catch (e) { /* ignore */ } }
+  try { localStorage.setItem(k, v); } catch (e) { /* storage blocked */ }
+}
+
+// ---------------------------------------------------------------- state
+function fresh() {
+  return { v:1, ore:0, runEarned:0, totalEarned:0, owned:BUILDINGS.map(() => 0), upg:{}, ach:{},
+    clicks:0, comets:0, maxCombo:0, pirates:0, meteors:0, stardust:0, supernovas:0, won:false, playTime:0, last:Date.now(), mute:false, seenIntro:false };
+}
+
+function load() {
+  try {
+    const raw = storeGet(SAVE_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    const f = fresh();
+    for (const k in f) {
+      if (k !== 'owned' && d[k] !== undefined && typeof d[k] === typeof f[k]) f[k] = d[k];
+    }
+    f.owned = BUILDINGS.map((_, i) => {
+      const n = Array.isArray(d.owned) ? Math.floor(Number(d.owned[i])) : 0;
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    });
+    for (const k of ['ore', 'runEarned', 'totalEarned', 'clicks', 'comets', 'maxCombo', 'pirates', 'meteors', 'stardust', 'supernovas', 'playTime', 'last']) {
+      if (!Number.isFinite(f[k]) || f[k] < 0) f[k] = k === 'last' ? Date.now() : 0;
+    }
+    return f;
+  } catch (e) { return null; }
+}
+
+function save() {
+  try { S.last = Date.now(); storeSet(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+}
+
+let S = fresh();
+let M = null, OPS = 0, perB = [];
+let buffs = [];
+let buyMode = 1;
+
+function recompute() {
+  const m = { b:BUILDINGS.map(() => 1), all:1, clickMul:1, clickOps:0, cometFreq:1, cometDur:1 };
+  for (const u of UPGRADES) if (S.upg[u.id]) u.apply(m);
+  BUILDINGS.forEach((b, i) => { m.b[i] *= Math.pow(2, Math.floor(S.owned[i] / 25)); });
+  m.all *= (1 + Object.keys(S.ach).length * 0.01) * (1 + S.stardust * 0.03);
+  M = m;
+  OPS = 0;
+  perB = BUILDINGS.map((b, i) => {
+    const p = S.owned[i] * b.ops * m.b[i] * m.all;
+    OPS += p;
+    return p;
+  });
+}
+
+const prodBuff = () => buffs.reduce((a, b) => b.type === 'storm' ? a * b.mult : a, 1);
+const clickBuff = () => buffs.reduce((a, b) => b.type === 'frenzy' ? a * b.mult : a, 1);
+const effOps = () => OPS * prodBuff();
+const clickValue = () => (M.clickMul * (1 + S.stardust * 0.03) + effOps() * M.clickOps) * clickBuff();
+
+function earn(x) {
+  if (!(x > 0)) return;
+  S.ore += x; S.runEarned += x; S.totalEarned += x;
+}
+
+// ---------------------------------------------------------------- helpers
+const SUF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+function fmt(n) {
+  if (!Number.isFinite(n)) return '∞';
+  if (n < 1000) return (n < 10 && n % 1 !== 0) ? n.toFixed(1) : String(Math.floor(n));
+  const e = Math.floor(Math.log10(n) / 3);
+  if (e < SUF.length) {
+    const v = n / Math.pow(1000, e);
+    return (v < 10 ? v.toFixed(2) : v < 100 ? v.toFixed(1) : String(Math.floor(v))) + SUF[e];
+  }
+  return n.toExponential(2).replace('+', '');
+}
+function fmtTime(sec) {
+  sec = Math.floor(sec);
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (h > 0) return h + 'h ' + m + 'm';
+  if (m > 0) return m + 'm ' + s + 's';
+  return s + 's';
+}
+const $ = id => document.getElementById(id);
+
+// ---------------------------------------------------------------- sound
+let AC = null;
+function sfx(kind) {
+  if (S.mute) return;
+  try {
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    const t = AC.currentTime;
+    const tone = (f, d, type, vol, delay = 0) => {
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t + delay);
+      g.gain.setValueAtTime(vol, t + delay);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + delay + d);
+      o.connect(g); g.connect(AC.destination);
+      o.start(t + delay); o.stop(t + delay + d + 0.03);
+    };
+    if (kind === 'click') tone(260 + Math.random() * 120, 0.07, 'triangle', 0.07);
+    else if (kind === 'buy') { tone(520, 0.08, 'square', 0.04); tone(780, 0.1, 'square', 0.04, 0.07); }
+    else if (kind === 'comet') [660, 880, 1100, 1320].forEach((f, i) => tone(f, 0.12, 'sine', 0.07, i * 0.06));
+    else if (kind === 'ach') [523, 659, 784].forEach((f, i) => tone(f, 0.15, 'triangle', 0.07, i * 0.08));
+    else if (kind === 'pop') tone(700 + Math.random() * 300, 0.07, 'sine', 0.08);
+    else if (kind === 'hit') { tone(140 + Math.random() * 40, 0.09, 'square', 0.05); tone(90, 0.12, 'sawtooth', 0.03); }
+    else if (kind === 'crit') { tone(880, 0.06, 'square', 0.05); tone(1320, 0.12, 'square', 0.05, 0.05); }
+    else if (kind === 'alarm') [440, 330, 440, 330].forEach((f, i) => tone(f, 0.14, 'sawtooth', 0.04, i * 0.15));
+    else if (kind === 'nova') [196, 247, 294, 392, 494, 587].forEach((f, i) => tone(f, 0.3, 'sine', 0.08, i * 0.09));
+  } catch (e) { /* audio not available */ }
+}
+
+// ---------------------------------------------------------------- toasts & modal
+function toast(text, cls = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + cls;
+  el.textContent = text;
+  const box = $('toasts');
+  box.appendChild(el);
+  while (box.children.length > (window.innerWidth <= 820 ? 2 : 4)) box.firstChild.remove();
+  setTimeout(() => el.remove(), 3500);
+}
+
+function modal(title, html, buttons) {
+  const box = $('modalbox');
+  box.innerHTML = '<h2></h2><p></p><div class="row"></div>';
+  box.querySelector('h2').textContent = title;
+  box.querySelector('p').innerHTML = html;
+  const row = box.querySelector('.row');
+  buttons.forEach(b => {
+    const el = document.createElement('button');
+    el.className = 'btn ' + (b.cls || '');
+    el.textContent = b.label;
+    el.onclick = () => { $('modal').classList.remove('show'); if (b.fn) b.fn(); };
+    row.appendChild(el);
+  });
+  $('modal').classList.add('show');
+}
+
+// ---------------------------------------------------------------- actions
+function costOf(i, n) {
+  const base = BUILDINGS[i].cost * Math.pow(R, S.owned[i]);
+  return base * (Math.pow(R, n) - 1) / (R - 1);
+}
+function maxAfford(i) {
+  const base = BUILDINGS[i].cost * Math.pow(R, S.owned[i]);
+  let n = Math.max(0, Math.floor(Math.log(S.ore * (R - 1) / base + 1) / Math.log(R)));
+  while (n > 0 && costOf(i, n) > S.ore) n--;
+  return n;
+}
+function buyAmount(i) { return buyMode === 'max' ? Math.max(1, maxAfford(i)) : buyMode; }
+
+function buyBuilding(i, silent) {
+  const n = buyMode === 'max' ? maxAfford(i) : buyMode;
+  if (n <= 0) return false;
+  const c = costOf(i, n);
+  if (c > S.ore) return false;
+  S.ore -= c;
+  S.owned[i] += n;
+  recompute();
+  if (!silent) { sfx('buy'); checkAch(); }
+  return true;
+}
+
+function availableUpgrades() {
+  return UPGRADES.filter(u => !S.upg[u.id] && u.req(S)).sort((a, b) => a.cost - b.cost);
+}
+
+function buyUpgrade(id, silent) {
+  const u = UPG_BY_ID[id];
+  if (!u || S.upg[id] || !u.req(S) || S.ore < u.cost) return false;
+  S.ore -= u.cost;
+  S.upg[id] = 1;
+  recompute();
+  if (!silent) sfx('buy');
+  if (u.final && !S.won) {
+    S.won = true;
+    checkAch();
+    sfx('nova');
+    modal('🌞 You built the Dyson Sphere!',
+      'You wrapped a whole star in mining machines in <b>' + fmtTime(S.playTime) + '</b>.<br><br>' +
+      'Want more? Go <b>Supernova</b> to earn Stardust, get stronger and beat your time!',
+      [{ label:'Keep playing' }]);
+  } else if (!silent) checkAch();
+  return true;
+}
+
+const stardustGain = () => Math.floor(Math.sqrt(S.runEarned / 1e7));
+
+function doSupernova() {
+  const gain = stardustGain();
+  if (S.runEarned < NOVA_MIN || gain <= 0) return;
+  S.stardust += gain;
+  S.supernovas++;
+  S.ore = 0; S.runEarned = 0;
+  S.owned = BUILDINGS.map(() => 0);
+  S.upg = {};
+  buffs = [];
+  recompute();
+  checkAch();
+  sfx('nova');
+  flash = 1;
+  toast('💫 Supernova! +' + fmt(gain) + ' Stardust', 'pink');
+  lastSig = '';
+  save();
+}
+
+let checkedAch = 0;
+function checkAch() {
+  let changed = false;
+  for (const a of ACH) {
+    if (!S.ach[a.id] && a.test(S)) {
+      S.ach[a.id] = 1;
+      changed = true;
+      toast('🏆 ' + a.name + ' — ' + a.desc + ' (+1% production)', 'gold');
+      sfx('ach');
+    }
+  }
+  if (changed) recompute();
+}
+
+function addBuff(type, label, mult, sec) {
+  buffs = buffs.filter(b => b.type !== type);
+  buffs.push({ type, label, mult, end:Date.now() + sec * 1000 });
+}
+
+// ---------------------------------------------------------------- canvas
+const cv = $('cv');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, dpr = 1;
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = cv.clientWidth; H = cv.clientHeight;
+  cv.width = Math.max(1, Math.floor(W * dpr));
+  cv.height = Math.max(1, Math.floor(H * dpr));
+}
+window.addEventListener('resize', resize);
+
+const stars = Array.from({ length:170 }, () => ({ x:Math.random(), y:Math.random(), r:Math.random() * 1.4 + 0.3, p:Math.random() * 6 }));
+const astVerts = Array.from({ length:20 }, () => 0.86 + Math.random() * 0.16);
+const craters = Array.from({ length:7 }, () => ({ a:Math.random() * Math.PI * 2, d:Math.random() * 0.6, r:0.08 + Math.random() * 0.12 }));
+const specks = Array.from({ length:9 }, () => ({ a:Math.random() * Math.PI * 2, d:0.2 + Math.random() * 0.6 }));
+let rot = 0, pulse = 0, flash = 0;
+let floats = [], parts = [];
+let comet = null;
+let cometTimer = 40;
+
+const center = () => ({ x:W / 2, y:H * 0.57 });
+const astR = () => Math.max(36, Math.min(W, H) * 0.155);
+
+function burst(x, y, color, n, speed) {
+  for (let k = 0; k < n; k++) {
+    const a = Math.random() * Math.PI * 2, v = speed * (0.4 + Math.random());
+    parts.push({ x, y, vx:Math.cos(a) * v, vy:Math.sin(a) * v, life:1, color });
+  }
+  if (parts.length > 300) parts.splice(0, parts.length - 300);
+}
+
+function spawnComet() {
+  const left = Math.random() < 0.5;
+  const speed = (W + 200) / (9 + Math.random() * 3);
+  comet = { x:left ? -60 : W + 60, y:H * (0.12 + Math.random() * 0.4), vx:left ? speed : -speed, vy:(Math.random() - 0.5) * speed * 0.2, t:0 };
+}
+const nextCometTime = () => (60 + Math.random() * 90) / M.cometFreq;
+
+function catchComet() {
+  const c = comet;
+  comet = null;
+  S.comets++;
+  let r = Math.random();
+  if (OPS < 1) r = 0.5;
+  const dur = M.cometDur;
+  if (r < 0.45) {
+    addBuff('storm', '🌪️ Ore Storm x7', 7, 30 * dur);
+    toast('🌪️ Ore Storm! Production x7', 'pink');
+  } else if (r < 0.8) {
+    const g = Math.max(25, Math.min(S.ore * 0.2, effOps() * 900) + 15);
+    earn(g);
+    floats.push({ x:c.x, y:c.y, text:'+' + fmt(g), life:1.6, color:'#ffd166', size:26 });
+    toast('💎 Lucky Haul! +' + fmt(g) + ' ore', 'gold');
+  } else {
+    addBuff('frenzy', '⚡ Click Frenzy x15', 15, 15 * dur);
+    toast('⚡ Click Frenzy! Clicks x15', 'pink');
+  }
+  burst(c.x, c.y, '#ffffff', 30, 260);
+  sfx('comet');
+  checkAch();
+}
+
+// --- action: combo, crits, meteors, pirates
+let combo = 0, comboIdle = 0, shake = 0, lastComboShown = -1;
+const comboMult = () => 1 + Math.floor(combo / 25);
+let meteors = [], showerTime = 0, showerSpawn = 0, showerTimer = 75;
+let pirate = null, pirateTimer = 120;
+
+function mine(x, y) {
+  combo = Math.min(100, combo + 6);
+  comboIdle = 0;
+  const cm = comboMult();
+  if (cm > S.maxCombo) S.maxCombo = cm;
+  const crit = Math.random() < 0.06;
+  const v = clickValue() * cm * (crit ? 10 : 1);
+  earn(v);
+  S.clicks++;
+  pulse = 1;
+  floats.push({ x:x + (Math.random() - 0.5) * 20, y:y - 10, text:(crit ? 'CRIT! +' : '+') + fmt(v), life:crit ? 1.3 : 1,
+    color:crit ? '#ff4d6d' : clickBuff() > 1 ? '#ff6bcb' : cm > 1 ? '#ff9f43' : '#ffd166', size:crit ? 32 : 20 + cm * 2 });
+  if (floats.length > 60) floats.shift();
+  burst(x, y, crit ? '#ff4d6d' : '#c9a26b', crit ? 22 : 6, crit ? 300 : 140);
+  if (crit) { shake = Math.max(shake, 0.4); sfx('crit'); } else sfx('click');
+  if (S.clicks % 10 === 0 || S.clicks < 3) checkAch();
+}
+
+function startShower() {
+  showerTime = 12;
+  showerSpawn = 0;
+  toast('☄️ METEOR SHOWER! Smash the meteors!', 'pink');
+  sfx('alarm');
+}
+
+function spawnMeteor() {
+  meteors.push({ x:W * (0.05 + Math.random() * 0.9), y:-25, vx:(Math.random() - 0.5) * 90, vy:150 + Math.random() * 110, r:12 + Math.random() * 8, rot:Math.random() * 6 });
+}
+
+function smashMeteor(m) {
+  meteors.splice(meteors.indexOf(m), 1);
+  const g = Math.max(10, effOps() * 4 + clickValue() * 5) * comboMult();
+  earn(g);
+  S.meteors++;
+  combo = Math.min(100, combo + 4); comboIdle = 0;
+  floats.push({ x:m.x, y:m.y, text:'+' + fmt(g), life:1.1, color:'#ffb347', size:24 });
+  burst(m.x, m.y, '#ff9f43', 14, 220);
+  shake = Math.max(shake, 0.15);
+  sfx('pop');
+  if (S.meteors % 10 === 0) checkAch();
+}
+
+function spawnPirate() {
+  const c = center(), left = Math.random() < 0.5, R0 = astR();
+  const hp = 20 + Math.min(40, S.pirates * 3);
+  pirate = { x:left ? -70 : W + 70, y:c.y - R0 * 1.6, tx:c.x + (left ? -1 : 1) * R0 * 1.9, ty:c.y - R0 * 1.25,
+    hp, maxHp:hp, time:20, stolen:0, leaving:false, hitT:0 };
+  toast('🏴‍☠️ SPACE PIRATE! Click it fast before it steals your ore!', 'pink');
+  sfx('alarm');
+}
+
+function hitPirate(x, y) {
+  const p = pirate;
+  p.hp -= Math.random() < 0.06 ? 3 : 1;
+  p.hitT = 0.12;
+  shake = Math.max(shake, 0.12);
+  burst(x, y, '#ff4d6d', 8, 200);
+  sfx('hit');
+  if (p.hp <= 0) {
+    const g = p.stolen * 2 + Math.max(50, effOps() * 45 + clickValue() * 25);
+    earn(g);
+    S.pirates++;
+    floats.push({ x:p.x, y:p.y, text:'+' + fmt(g), life:1.8, color:'#7cf29a', size:34 });
+    burst(p.x, p.y, '#ffd166', 50, 380);
+    burst(p.x, p.y, '#ff4d6d', 30, 260);
+    shake = 0.7;
+    flash = 0.35;
+    toast('💥 Pirate destroyed! +' + fmt(g) + ' ore (stolen ore x2 back!)', 'gold');
+    sfx('nova');
+    pirate = null;
+    checkAch();
+  }
+}
+
+function updateAction(vdt) {
+  // combo decay
+  comboIdle += vdt;
+  if (comboIdle > 0.6) combo = Math.max(0, combo - 45 * vdt);
+  const cm = comboMult();
+  if (cm !== lastComboShown) {
+    lastComboShown = cm;
+    const el = $('combo');
+    el.textContent = cm > 1 ? '🔥 COMBO x' + cm + (cm === 5 ? ' MAX!' : '') : '';
+    el.style.transform = 'scale(' + (1 + cm * 0.08) + ')';
+  }
+  // meteor shower
+  if (!document.hidden && S.clicks >= 15) {
+    if (showerTime <= 0) { showerTimer -= vdt; if (showerTimer <= 0) { startShower(); showerTimer = 110 + Math.random() * 80; } }
+  }
+  if (showerTime > 0) {
+    showerTime -= vdt; showerSpawn -= vdt;
+    if (showerSpawn <= 0) { spawnMeteor(); showerSpawn = 0.32; }
+  }
+  meteors.forEach(m => { m.x += m.vx * vdt; m.y += m.vy * vdt; m.rot += vdt * 3; });
+  meteors = meteors.filter(m => m.y < H + 40);
+  // pirate
+  if (!pirate && !document.hidden && totalOwned(S) >= 10) {
+    pirateTimer -= vdt;
+    if (pirateTimer <= 0) { spawnPirate(); pirateTimer = 150 + Math.random() * 120; }
+  }
+  if (pirate) {
+    const p = pirate;
+    p.hitT = Math.max(0, p.hitT - vdt);
+    if (!p.leaving) {
+      p.x += (p.tx - p.x) * Math.min(1, vdt * 2.5);
+      p.y += (p.ty - p.y) * Math.min(1, vdt * 2.5) + Math.sin(performance.now() / 300) * 0.4;
+      p.time -= vdt;
+      const steal = Math.min(S.ore, S.ore * 0.008 * vdt);
+      S.ore -= steal; p.stolen += steal;
+      if (p.time <= 0) {
+        p.leaving = true;
+        toast('😠 The pirate escaped with ' + fmt(p.stolen) + ' ore!', '');
+      }
+    } else {
+      p.x += (p.x < W / 2 ? -1 : 1) * 420 * vdt;
+      p.y -= 120 * vdt;
+      if (p.x < -120 || p.x > W + 120) pirate = null;
+    }
+  }
+}
+
+function drawAction() {
+  meteors.forEach(m => {
+    const tail = ctx.createLinearGradient(m.x, m.y, m.x - m.vx * 0.25, m.y - m.vy * 0.25);
+    tail.addColorStop(0, 'rgba(255,140,40,0.85)'); tail.addColorStop(1, 'rgba(255,140,40,0)');
+    ctx.strokeStyle = tail; ctx.lineWidth = m.r * 1.2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x - m.vx * 0.25, m.y - m.vy * 0.25); ctx.stroke();
+    ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.rot);
+    ctx.fillStyle = '#7a5a3c'; ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2, rr = m.r * (k % 2 ? 0.8 : 1); ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  });
+  if (pirate) {
+    const p = pirate, c = center();
+    if (!p.leaving) {
+      ctx.strokeStyle = 'rgba(255,77,109,' + (0.35 + 0.25 * Math.sin(performance.now() / 80)) + ')';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(p.x, p.y + 14); ctx.lineTo(c.x, c.y); ctx.stroke();
+    }
+    ctx.save(); ctx.translate(p.x, p.y);
+    if (p.hitT > 0) ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
+    ctx.fillStyle = p.hitT > 0 ? '#ffffff' : '#3b3f58';
+    ctx.beginPath(); ctx.ellipse(0, 4, 34, 12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ff4d6d'; ctx.fillRect(-30, 2, 60, 4);
+    ctx.fillStyle = 'rgba(150,230,255,0.85)';
+    ctx.beginPath(); ctx.ellipse(0, -4, 15, 11, 0, Math.PI, 0); ctx.fill();
+    ctx.font = '18px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('☠️', 0, 0);
+    ctx.restore();
+    if (!p.leaving) {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(p.x - 34, p.y - 32, 68, 8);
+      ctx.fillStyle = '#ff4d6d'; ctx.fillRect(p.x - 34, p.y - 32, 68 * Math.max(0, p.hp / p.maxHp), 8);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('CLICK! ' + Math.ceil(p.time) + 's · stealing ' + fmt(p.stolen), p.x, p.y - 38);
+    }
+  }
+}
+
+cv.addEventListener('pointerdown', e => {
+  const rect = cv.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  if (comet && Math.hypot(x - comet.x, y - comet.y) < 42) { catchComet(); return; }
+  if (pirate && !pirate.leaving && Math.abs(x - pirate.x) < 44 && Math.abs(y - pirate.y) < 30) { hitPirate(x, y); return; }
+  for (const m of meteors) { if (Math.hypot(x - m.x, y - m.y) < m.r + 16) { smashMeteor(m); return; } }
+  const c = center();
+  if (Math.hypot(x - c.x, y - c.y) < astR() * 1.15) mine(x, y);
+});
+
+function drawOrbits(front) {
+  const c = center(), R0 = astR();
+  BUILDINGS.forEach((b, i) => {
+    const n = Math.min(S.owned[i], 12);
+    if (!n) return;
+    const rx = R0 * (1.4 + i * 0.17), ry = rx * 0.38;
+    if (!front) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(c.x, c.y, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    const speed = 0.5 - i * 0.04;
+    for (let k = 0; k < n; k++) {
+      const a = rot * speed * 6 + (k / n) * Math.PI * 2 + i;
+      const sin = Math.sin(a);
+      if ((sin > 0) !== front) continue;
+      const x = c.x + Math.cos(a) * rx, y = c.y + sin * ry;
+      const size = 3 + i * 0.35 + (front ? 1 : 0);
+      ctx.fillStyle = b.color;
+      ctx.shadowColor = b.color; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  });
+}
+
+function drawAsteroid() {
+  const c = center(), R0 = astR();
+  const s = 1 - pulse * 0.07;
+  const glow = ctx.createRadialGradient(c.x, c.y, R0 * 0.5, c.x, c.y, R0 * 2);
+  glow.addColorStop(0, 'rgba(255,209,102,' + (0.18 + pulse * 0.15) + ')');
+  glow.addColorStop(1, 'rgba(255,209,102,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(c.x, c.y, R0 * 2, 0, Math.PI * 2); ctx.fill();
+
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.scale(s, s);
+  ctx.beginPath();
+  astVerts.forEach((v, k) => {
+    const a = (k / astVerts.length) * Math.PI * 2 + rot;
+    const x = Math.cos(a) * R0 * v, y = Math.sin(a) * R0 * v;
+    if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  const g = ctx.createRadialGradient(-R0 * 0.3, -R0 * 0.35, R0 * 0.1, 0, 0, R0);
+  g.addColorStop(0, '#9b8a76'); g.addColorStop(1, '#4a3d33');
+  ctx.fillStyle = g; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = '#2c241e'; ctx.stroke();
+  ctx.save(); ctx.clip();
+  craters.forEach(cr => {
+    const a = cr.a + rot;
+    ctx.fillStyle = 'rgba(40,30,25,0.45)';
+    ctx.beginPath(); ctx.arc(Math.cos(a) * cr.d * R0, Math.sin(a) * cr.d * R0, cr.r * R0, 0, Math.PI * 2); ctx.fill();
+  });
+  specks.forEach((sp, k) => {
+    const a = sp.a + rot;
+    ctx.fillStyle = 'rgba(255,215,110,' + (0.6 + 0.4 * Math.sin(performance.now() / 300 + k)) + ')';
+    ctx.beginPath(); ctx.arc(Math.cos(a) * sp.d * R0, Math.sin(a) * sp.d * R0, R0 * 0.035, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawComet() {
+  if (!comet) return;
+  const sp = Math.hypot(comet.vx, comet.vy) || 1;
+  const tx = comet.x - comet.vx / sp * 120, ty = comet.y - comet.vy / sp * 120;
+  const g = ctx.createLinearGradient(comet.x, comet.y, tx, ty);
+  g.addColorStop(0, 'rgba(150,240,255,0.9)'); g.addColorStop(1, 'rgba(150,240,255,0)');
+  ctx.strokeStyle = g; ctx.lineWidth = 10; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(comet.x, comet.y); ctx.lineTo(tx, ty); ctx.stroke();
+  const pul = 1 + Math.sin(comet.t * 8) * 0.15;
+  ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#5ee7ff'; ctx.shadowBlur = 25;
+  ctx.beginPath(); ctx.arc(comet.x, comet.y, 11 * pul, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('click me!', comet.x, comet.y - 22);
+}
+
+function draw(dt) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#0b0d1a'; ctx.fillRect(0, 0, W, H);
+  const neb = ctx.createRadialGradient(W * 0.25, H * 0.25, 0, W * 0.25, H * 0.25, Math.max(W, H) * 0.8);
+  neb.addColorStop(0, 'rgba(110,70,200,0.20)'); neb.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = neb; ctx.fillRect(0, 0, W, H);
+  const t = performance.now() / 1000;
+  stars.forEach(st => {
+    ctx.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(t * 0.8 + st.p));
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(st.x * W, st.y * H, st.r, st.r);
+  });
+  ctx.globalAlpha = 1;
+
+  if (shake > 0) { ctx.translate((Math.random() - 0.5) * shake * 26, (Math.random() - 0.5) * shake * 26); shake = Math.max(0, shake - dt * 1.6); }
+  drawOrbits(false);
+  drawAsteroid();
+  drawOrbits(true);
+
+  parts.forEach(p => {
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; p.life -= dt * 1.6;
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+  });
+  parts = parts.filter(p => p.life > 0);
+  ctx.globalAlpha = 1;
+
+  drawComet();
+  drawAction();
+
+  ctx.textAlign = 'center';
+  floats.forEach(f => {
+    f.y -= 60 * dt; f.life -= dt;
+    ctx.globalAlpha = Math.max(0, Math.min(1, f.life));
+    ctx.font = '800 ' + f.size + 'px "Segoe UI",sans-serif';
+    ctx.fillStyle = f.color;
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 3;
+    ctx.strokeText(f.text, f.x, f.y);
+    ctx.fillText(f.text, f.x, f.y);
+  });
+  floats = floats.filter(f => f.life > 0);
+  ctx.globalAlpha = 1;
+
+  if (flash > 0) {
+    ctx.fillStyle = 'rgba(255,255,255,' + flash + ')';
+    ctx.fillRect(0, 0, W, H);
+    flash = Math.max(0, flash - dt * 1.2);
+  }
+}
+
+// ---------------------------------------------------------------- UI
+let tab = 'build', lastSig = '';
+
+const isMystery = i => i > 0 && S.owned[i] === 0 && S.runEarned < BUILDINGS[i].cost * 0.5;
+
+function maxVisibleBuilding() {
+  let m = 0;
+  BUILDINGS.forEach((b, i) => { if (!isMystery(i)) m = i; });
+  return Math.min(m + 1, BUILDINGS.length - 1);
+}
+
+function sig() {
+  if (tab === 'build') {
+    let known = 0;
+    for (let i = 0; i < BUILDINGS.length; i++) if (!isMystery(i)) known++;
+    return 'b' + maxVisibleBuilding() + '|' + known + '|' + buyMode;
+  }
+  if (tab === 'upg') return 'u' + availableUpgrades().map(u => u.id).join(',');
+  if (tab === 'nova') return 'n' + S.supernovas + '|' + S.stardust;
+  return 's' + Object.keys(S.ach).length + '|' + S.mute;
+}
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c])); }
+
+function fullRender() {
+  const el = $('content');
+  let h = '';
+  if (tab === 'build') {
+    h += '<div id="buymode">' + [1, 10, 100, 'max'].map(m =>
+      '<button data-mode="' + m + '" class="' + (buyMode === m ? 'on' : '') + '">' + (m === 'max' ? 'MAX' : 'x' + m) + '</button>').join('') + '</div>';
+    const mv = maxVisibleBuilding();
+    for (let i = 0; i <= mv; i++) {
+      const b = BUILDINGS[i];
+      if (isMystery(i)) {
+        h += '<div class="item mystery"><div class="icon" style="background:#252b4d">❔</div><div class="info"><div class="name">???</div>' +
+          '<div class="desc">Keep mining to discover…</div><div class="cost">◆ ' + fmt(b.cost) + '</div></div></div>';
+      } else {
+        h += '<div class="item" data-b="' + i + '"><div class="icon" style="background:' + b.color + '33">' + b.icon + '</div>' +
+          '<div class="info"><div class="name">' + esc(b.name) + '</div><div class="desc" id="bd' + i + '"></div>' +
+          '<div class="cost" id="bc' + i + '"></div></div><div class="count" id="bn' + i + '"></div></div>';
+      }
+    }
+  } else if (tab === 'upg') {
+    const list = availableUpgrades();
+    if (!list.length) h = '<div class="empty">No upgrades right now.<br>Buy more machines and keep clicking!</div>';
+    list.forEach(u => {
+      h += '<div class="item" data-u="' + u.id + '"><div class="icon" style="background:' + (u.final ? '#ffd16644' : (u.color || '#5ee7ff') + '33') + '">' + u.icon + '</div>' +
+        '<div class="info"><div class="name">' + esc(u.name) + '</div><div class="desc">' + esc(u.desc) + '</div>' +
+        '<div class="cost" id="uc_' + u.id + '">◆ ' + fmt(u.cost) + '</div></div></div>';
+    });
+  } else if (tab === 'nova') {
+    h += '<div class="card"><h3>💫 Supernova</h3>Blow up your mining system and start over — but you keep <b>Stardust</b>.<br>' +
+      'Each Stardust gives <b>+3%</b> to everything, forever.<br><br>' +
+      'Stardust: <span class="big">' + fmt(S.stardust) + '</span> (+' + fmt(S.stardust * 3) + '%)<br>' +
+      'Supernovas: ' + S.supernovas + '</div>' +
+      '<div class="card">If you go supernova now you get:<br><span class="big" id="novagain">0</span> Stardust' +
+      '<div class="desc" id="novareq"></div>' +
+      '<button class="btn pink wide" id="novabtn">Go Supernova!</button></div>';
+  } else {
+    h += '<div class="card"><h3>📊 Stats</h3><div id="statlist"></div></div>';
+    h += '<div class="card"><h3>🏆 Achievements (' + Object.keys(S.ach).length + '/' + ACH.length + ')</h3><div class="ach">' +
+      ACH.map(a => '<div class="' + (S.ach[a.id] ? 'got' : '') + '"><b>' + (S.ach[a.id] ? '🏆 ' : '🔒 ') + esc(a.name) + '</b>' + esc(a.desc) + '</div>').join('') + '</div></div>';
+    h += '<div class="card"><h3>⚙️ Settings</h3>' +
+      '<button class="btn alt wide" id="mutebtn">' + (S.mute ? '🔇 Sound: OFF' : '🔊 Sound: ON') + '</button>' +
+      '<button class="btn alt wide" id="resetbtn">🗑️ Reset all progress</button></div>';
+  }
+  el.innerHTML = h;
+}
+
+function updateUI() {
+  $('ore').textContent = fmt(Math.floor(S.ore)) + ' ore';
+  const pb = prodBuff();
+  $('ops').textContent = fmt(effOps()) + ' ore/sec' + (pb > 1 ? '  (x' + pb + '!)' : '') + '  ·  ' + fmt(clickValue()) + ' per click';
+  $('buffs').innerHTML = buffs.map(b => '<span class="buff">' + b.label + ' · ' + Math.ceil((b.end - Date.now()) / 1000) + 's</span>').join('');
+  const prog = S.won ? 1 : Math.min(1, Math.log10(S.runEarned + 1) / Math.log10(GOAL));
+  $('goalfill').style.width = (prog * 100).toFixed(1) + '%';
+  $('goaltext').textContent = S.won ? '🌞 Dyson Sphere built! Go Supernova to grow stronger' : '🎯 Goal: build the Dyson Sphere · ' + Math.floor(prog * 100) + '%';
+
+  if (tab === 'build') {
+    for (let i = 0; i <= maxVisibleBuilding(); i++) {
+      const c = $('bc' + i);
+      if (!c) continue;
+      const n = buyAmount(i), cost = costOf(i, n);
+      c.textContent = '◆ ' + fmt(cost) + (n > 1 ? '  (x' + n + ')' : '');
+      c.classList.toggle('no', cost > S.ore);
+      $('bn' + i).textContent = S.owned[i];
+      const each = BUILDINGS[i].ops * M.b[i] * M.all;
+      $('bd' + i).textContent = S.owned[i] > 0
+        ? fmt(each) + '/s each · ' + fmt(perB[i]) + '/s total'
+        : BUILDINGS[i].desc + ' (' + fmt(each) + '/s)';
+      c.closest('.item').classList.toggle('off', cost > S.ore);
+    }
+  } else if (tab === 'upg') {
+    availableUpgrades().forEach(u => {
+      const c = $('uc_' + u.id);
+      if (!c) return;
+      c.classList.toggle('no', u.cost > S.ore);
+      c.closest('.item').classList.toggle('off', u.cost > S.ore);
+    });
+  } else if (tab === 'nova') {
+    const g = stardustGain(), ok = S.runEarned >= NOVA_MIN && g > 0;
+    $('novagain').textContent = fmt(g);
+    $('novareq').textContent = ok ? 'Bonus after reset: +' + fmt((S.stardust + g) * 3) + '%' : 'Unlocks after earning ' + fmt(NOVA_MIN) + ' ore in this run (' + fmt(S.runEarned) + ' so far)';
+    $('novabtn').disabled = !ok;
+  } else {
+    const rows = [
+      ['Ore earned (this run)', fmt(S.runEarned)], ['Ore earned (all time)', fmt(S.totalEarned)],
+      ['Machines owned', fmt(totalOwned(S))], ['Clicks', fmt(S.clicks)], ['Comets caught', fmt(S.comets)], ['Meteors smashed', fmt(S.meteors)], ['Pirates defeated', fmt(S.pirates)], ['Best combo', 'x' + S.maxCombo],
+      ['Stardust', fmt(S.stardust)], ['Play time', fmtTime(S.playTime)],
+    ];
+    $('statlist').innerHTML = rows.map(r => '<div class="stat"><span>' + r[0] + '</span><span>' + r[1] + '</span></div>').join('');
+  }
+
+  const anyUpg = availableUpgrades().some(u => u.cost <= S.ore);
+  document.querySelector('[data-tab="upg"]').classList.toggle('has', anyUpg);
+  document.querySelector('[data-tab="nova"]').classList.toggle('has', S.runEarned >= NOVA_MIN && !S.supernovas);
+}
+
+function renderUI() {
+  const s = sig();
+  if (s !== lastSig) { lastSig = s; fullRender(); }
+  updateUI();
+}
+
+$('tabs').addEventListener('click', e => {
+  const t = e.target.closest('.tab');
+  if (!t) return;
+  tab = t.dataset.tab;
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+  lastSig = '';
+  renderUI();
+  $('content').scrollTop = 0;
+});
+
+$('content').addEventListener('click', e => {
+  const m = e.target.closest('[data-mode]');
+  if (m) { buyMode = m.dataset.mode === 'max' ? 'max' : Number(m.dataset.mode); renderUI(); return; }
+  const b = e.target.closest('[data-b]');
+  if (b) { if (buyBuilding(Number(b.dataset.b))) renderUI(); return; }
+  const u = e.target.closest('[data-u]');
+  if (u) { if (buyUpgrade(u.dataset.u)) renderUI(); return; }
+  if (e.target.id === 'novabtn') {
+    modal('💫 Go Supernova?', 'You will lose your ore, machines and upgrades, but gain <b>' + fmt(stardustGain()) + ' Stardust</b> (+3% each, forever).',
+      [{ label:'Boom! 💥', cls:'pink', fn:doSupernova }, { label:'Not yet', cls:'alt' }]);
+  } else if (e.target.id === 'mutebtn') {
+    S.mute = !S.mute; renderUI();
+  } else if (e.target.id === 'resetbtn') {
+    modal('Reset everything?', 'This deletes ALL progress, including Stardust and achievements. This cannot be undone.',
+      [{ label:'Yes, reset', cls:'pink', fn:() => { S = fresh(); S.seenIntro = true; buffs = []; recompute(); lastSig = ''; save(); } }, { label:'Cancel', cls:'alt' }]);
+  }
+});
+
+// ---------------------------------------------------------------- loop
+function tick(dt) {
+  const now = Date.now();
+  if (buffs.length) buffs = buffs.filter(b => b.end > now);
+  earn(effOps() * dt);
+  if (!document.hidden) S.playTime += dt;
+  if (!comet && !document.hidden) {
+    cometTimer -= dt;
+    if (cometTimer <= 0) { spawnComet(); cometTimer = nextCometTime(); }
+  }
+}
+
+let lastFrame = performance.now(), uiTimer = 0, achTimer = 0;
+function frame(nowMs) {
+  let dt = (nowMs - lastFrame) / 1000;
+  lastFrame = nowMs;
+  if (!(dt >= 0)) dt = 0;
+  dt = Math.min(dt, 8 * 3600);
+  tick(dt);
+  const vdt = Math.min(dt, 0.1);
+  rot += vdt * 0.12;
+  pulse = Math.max(0, pulse - vdt * 6);
+  if (comet) {
+    if (dt > 1) comet = null;
+    else {
+      comet.x += comet.vx * vdt; comet.y += comet.vy * vdt; comet.t += vdt;
+      if (comet.x < -140 || comet.x > W + 140) comet = null;
+    }
+  }
+  updateAction(vdt);
+  if (W !== cv.clientWidth || H !== cv.clientHeight) resize();
+  draw(vdt);
+  uiTimer += vdt; achTimer += vdt;
+  if (uiTimer > 0.2) { uiTimer = 0; renderUI(); }
+  if (achTimer > 1) { achTimer = 0; checkAch(); }
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- start
+async function boot() {
+await initPlatform();
+S = load() || fresh();
+recompute();
+resize();
+const away = (Date.now() - S.last) / 1000;
+if (S.seenIntro && away > 60 && OPS > 0) {
+  const secs = Math.min(away, 8 * 3600);
+  const gain = OPS * secs * 0.5;
+  earn(gain);
+  setTimeout(() => modal('👋 Welcome back!', 'You were away for <b>' + fmtTime(away) + '</b>.<br>Your machines mined <b>' + fmt(gain) + ' ore</b> while you were gone.', [{ label:'Collect' }]), 300);
+}
+if (!S.seenIntro) {
+  setTimeout(() => modal('⛏️ Tiny Star Miner',
+    '<b>Click the asteroid</b> to mine ore.<br>Buy <b>machines</b> to mine for you.<br>Click fast for 🔥 <b>combos</b>, catch <b>comets</b> ✨,<br>smash <b>meteors</b> ☄️ and blast <b>space pirates</b> 🏴‍☠️!<br><br>🎯 Goal: build the <b>Dyson Sphere</b>!',
+    [{ label:"Let's mine!", fn:() => { S.seenIntro = true; save(); } }]), 300);
+}
+checkAch();
+renderUI();
+setInterval(save, 10000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+window.addEventListener('pagehide', save);
+requestAnimationFrame(frame);
+}
+boot();
+
+// small hook for automated testing
+window.__tsm = { get S() { return S; }, tick, recompute, buyBuilding, buyUpgrade, availableUpgrades, mine, spawnComet, catchComet: () => { if (!comet) spawnComet(); catchComet(); }, doSupernova, spawnPirate, startShower, hitPirate: () => pirate && hitPirate(pirate.x, pirate.y), get pirate() { return pirate; }, get meteors() { return meteors; }, smash: () => meteors[0] && smashMeteor(meteors[0]), get OPS() { return OPS; }, setMode: m => { buyMode = m; } };
+})();
+</script>
+</body>
+</html>

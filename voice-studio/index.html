@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Studio</title>
+<style>
+:root{--bg:#0d0e12;--card:#16181f;--card2:#1f222b;--line:#2b2f3b;--txt:#f1f2f6;--mut:#8d94a5;--acc:#7c5cff;--acc2:#2fd39a;--warn:#f5b942;--bad:#ff5d6c}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:18px 14px 60px;max-width:720px;margin:0 auto}
+h1{font-size:23px;font-weight:750;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+h1 .dot{width:10px;height:10px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px var(--acc)}
+.sub{color:var(--mut);font-size:13px}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin:14px 0}
+.seg button{flex:1;border:0;background:none;color:var(--mut);font:inherit;font-weight:650;padding:10px 6px;border-radius:9px;cursor:pointer}
+.seg button.on{background:var(--card2);color:var(--txt)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h3{font-size:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+textarea{width:100%;min-height:170px;background:var(--card2);border:1px solid var(--line);color:var(--txt);font:inherit;padding:12px;border-radius:11px;resize:vertical}
+textarea:focus,select:focus,input:focus{outline:2px solid var(--acc);outline-offset:-1px}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:6px;gap:8px;flex-wrap:wrap}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card2);color:var(--mut);font:inherit;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:20px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--txt);color:var(--bg);border-color:var(--txt)}
+.voices{display:grid;gap:8px;max-height:340px;overflow-y:auto;padding-right:2px}
+.v{display:flex;gap:10px;align-items:center;background:var(--card2);border:1.5px solid transparent;border-radius:11px;padding:10px;cursor:pointer}
+.v.on{border-color:var(--acc);background:#231f3a}
+.av{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:750;font-size:15px;color:#fff}
+.v .i{flex:1;min-width:0}
+.v .n{font-weight:650;font-size:14px}
+.v .d{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;background:#2fd39a22;color:var(--acc2);padding:1px 6px;border-radius:5px;margin-left:4px;vertical-align:1px}
+.pv{flex:none;font-size:12px;font-weight:650;color:var(--txt);text-decoration:none;background:var(--line);padding:6px 9px;border-radius:8px}
+.btn{width:100%;border:0;font:inherit;font-weight:750;font-size:15.5px;padding:14px;border-radius:12px;cursor:pointer;background:var(--acc);color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.sec{background:var(--card2);color:var(--txt);font-size:14px;padding:11px}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+label.l{display:block;font-size:12px;color:var(--mut);font-weight:650;margin:10px 0 5px}
+select,input[type=text]{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--txt);font:inherit;padding:10px;border-radius:10px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.switch{display:flex;align-items:center;gap:10px;font-size:13.5px;margin-top:10px;cursor:pointer}
+.switch input{width:18px;height:18px;accent-color:var(--acc)}
+.bal{font-size:12.5px;padding:9px 11px;border-radius:10px;background:var(--card2);margin-bottom:10px}
+.bal.low{background:#3a2a10;color:var(--warn)}
+.res{background:var(--card2);border-radius:11px;padding:11px;margin-top:8px}
+.res .t{font-size:13.5px;font-weight:650;margin-bottom:4px}
+.res .s{font-size:12px;color:var(--mut);margin-bottom:8px}
+.links{display:flex;gap:6px;flex-wrap:wrap}
+.links a{font-size:12.5px;font-weight:650;color:#fff;background:var(--acc);text-decoration:none;padding:7px 11px;border-radius:8px}
+.links a.alt{background:var(--line)}
+.status{font-size:13px;color:var(--mut);margin-top:10px;min-height:18px;text-align:center}
+.status.err{color:var(--bad)}
+.status.ok{color:var(--acc2)}
+.wave{display:flex;gap:3px;justify-content:center;height:26px;align-items:center;margin-top:10px}
+.wave i{width:4px;border-radius:2px;background:var(--acc);height:6px}
+.wave.on i{animation:w 1s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.1s}.wave i:nth-child(3){animation-delay:.2s}.wave i:nth-child(4){animation-delay:.3s}.wave i:nth-child(5){animation-delay:.4s}.wave i:nth-child(6){animation-delay:.5s}.wave i:nth-child(7){animation-delay:.6s}
+@keyframes w{0%,100%{height:6px}50%{height:24px}}
+.tip{font-size:12.5px;color:var(--mut);line-height:1.5}
+.tip b{color:var(--txt)}
+.ai{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.ai button{border:1px dashed var(--line);background:none;color:var(--txt);font:inherit;font-size:12.5px;font-weight:600;padding:7px 10px;border-radius:9px;cursor:pointer}
+.ai button:disabled{opacity:.5}
+.hide{display:none!important}
+.small{font-size:11.5px;color:var(--mut);margin-top:8px}
+</style>
+</head>
+<body>
+<h1><span class="dot"></span>Voice Studio</h1>
+<div class="sub">Text rein, KI-Stimme raus. Für Voiceovers, Shorts und Stories.</div>
+
+<div class="card" style="margin-top:14px">
+  <h3>Dein Text <span class="sub" id="scenesInfo"></span></h3>
+  <textarea id="txt" placeholder="Schreib oder füge hier dein Skript ein …
+
+Tipp: Leere Zeile = neue Szene."></textarea>
+  <div class="meta"><span id="cnt">0 Zeichen</span><span id="dur">≈ 0 Sek.</span></div>
+  <div class="ai hide" id="aiBox">
+    <button data-ai="speak">✨ Fürs Sprechen glätten</button>
+    <button data-ai="hook">🔥 Stärkerer Hook</button>
+    <button data-ai="en">🇬🇧 Auf Englisch</button>
+    <button data-ai="short">✂️ Auf 60 Sek. kürzen</button>
+  </div>
+</div>
+
+<div class="seg">
+  <button data-mode="studio" class="on">🎙️ Studio (MP3)</button>
+  <button data-mode="free">🔊 Gratis vorhören</button>
+</div>
+
+<!-- STUDIO -->
+<div id="studio">
+  <div class="card">
+    <div class="bal" id="bal">Guthaben wird geladen …</div>
+    <h3>Stimme wählen</h3>
+    <div class="chips" id="cats"></div>
+    <div class="voices" id="voices"></div>
+    <label class="switch"><input type="checkbox" id="scenes"> Eine MP3 pro Szene (leere Zeile trennt)</label>
+  </div>
+  <button class="btn" id="gen">MP3 erstellen</button>
+  <div class="wave" id="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="status" id="st"></div>
+  <div class="card hide" id="outCard" style="margin-top:12px">
+    <h3>Deine Audios</h3>
+    <div id="out"></div>
+    <div class="small">Die Links öffnen die MP3 ausserhalb. Dort gleich speichern, die Links laufen nach einiger Zeit ab.</div>
+  </div>
+</div>
+
+<!-- FREE -->
+<div id="free" class="hide">
+  <div class="card">
+    <h3>Engine</h3>
+    <select id="engine"></select>
+    <div id="claudeOpts">
+      <label class="l">Claude-Stimme</label>
+      <div class="chips" id="cVoices"></div>
+    </div>
+    <div id="browserOpts">
+      <label class="l">Sprache</label>
+      <select id="bLang"></select>
+      <div class="chips" id="bGen" style="margin-top:10px"><button class="chip" data-g="f">💜 Frauen</button><button class="chip" data-g="m">Männer</button><button class="chip" data-g="a">Alle</button></div>
+      <div class="voices" id="bList"></div>
+      <div class="tip" id="bHint" style="margin-top:10px"></div>
+      <label class="l">Tonhöhe <span id="pitchV">1.0</span></label>
+      <input type="range" id="pitch" min="0.5" max="1.8" step="0.1" value="1">
+    </div>
+    <label class="l">Tempo <span id="rateV">1.0</span></label>
+    <input type="range" id="rate" min="0.7" max="1.5" step="0.05" value="0.95">
+  </div>
+  <div class="row">
+    <button class="btn" id="play">▶ Abspielen</button>
+    <button class="btn sec hide" id="stop" style="flex:0 0 110px">■ Stopp</button>
+  </div>
+  <div class="wave" id="wave2"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="status" id="st2"></div>
+  <div class="card tip" style="margin-top:12px">
+<b>🎧 Echtere Gratis-Stimmen freischalten</b><br>
+Die besten Gratis-Stimmen sind schon auf deinem Handy, müssen aber einmal geladen werden:<br><br>
+<b>iPhone:</b> Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Englisch → <b>Ava (Premium)</b>, <b>Zoe (Premium)</b> oder <b>Serena (Premium)</b> laden. Danach diese Seite neu öffnen.<br><br>
+<b>Android:</b> Einstellungen → Text-in-Sprache → Google-Sprachausgabe → Sprachdaten installieren → Englisch → weibliche Stimme wählen.<br><br>
+Stimmen mit ★ sind die hochwertigen.</div>
+<div class="card tip">
+<b>🎬 Als Audio-Datei speichern</b><br>
+1. Bildschirmaufnahme starten (Ton an).<br>
+2. Hier auf ▶ Abspielen tippen, Ende abwarten.<br>
+3. Aufnahme stoppen. Sie landet automatisch in deiner Galerie.<br>
+4. Video in den Chat schicken. Ich schneide den Ton raus und mache daraus eine saubere MP3.</div>
+</div>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var store={get:function(k,d){try{var v=localStorage.getItem('vs_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:function(k,v){try{localStorage.setItem('vs_'+k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- Text ---------- */
+var txt=$('txt');
+txt.value=store.get('text','');
+function scenes(){return txt.value.split(/\n\s*\n/).map(function(s){return s.trim()}).filter(Boolean)}
+function updCount(){
+  var n=txt.value.trim().length,w=txt.value.trim().split(/\s+/).filter(Boolean).length;
+  $('cnt').textContent=n+' Zeichen · '+w+' Wörter';
+  var sec=Math.round(w/2.6);
+  $('dur').textContent='≈ '+(sec>=60?Math.floor(sec/60)+' Min. '+(sec%60)+' Sek.':sec+' Sek.')+(n?' · '+credits()+' Credits':'');
+  var sc=scenes().length;$('scenesInfo').textContent=sc>1?sc+' Szenen':'';
+  store.set('text',txt.value);updGen();
+}
+function credits(){return Math.max(1,Math.ceil(txt.value.trim().length/1000))*28}
+txt.addEventListener('input',updCount);
+
+/* ---------- Mode ---------- */
+document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('[data-mode]').forEach(function(x){x.classList.toggle('on',x===b)});
+  $('studio').classList.toggle('hide',b.dataset.mode!=='studio');
+  $('free').classList.toggle('hide',b.dataset.mode!=='free');
+}});
+
+/* ---------- Voices (Studio) ---------- */
+var REC={pFZP5JQG7iQjIQuC4Bku:1,EXAVITQu4vr4xnSDxMaL:1,JBFqnCBsd6RMkjVDRZzb:1,cgSgspJ2msm6clMCkdW9:1,N2lVS1w4EtoT3dr4eOWO:1,nPczCjzI2devNBz1zQrb:1};
+var FEM=['pFZP5JQG7iQjIQuC4Bku','EXAVITQu4vr4xnSDxMaL','hpp4J3VqNfWAUOO0d1Us','cgSgspJ2msm6clMCkdW9','XrExE9yKIg1WjnnlVkGX','Xb7hH8MSUJpSbSDYk0k2','FGY2WhTYpPnrIDTdsKH5'];
+var FEMNOTE={pFZP5JQG7iQjIQuC4Bku:'Samtig, britisch. Perfekt für Geschichten',EXAVITQu4vr4xnSDxMaL:'Warm und selbstsicher. Klingt sehr echt',hpp4J3VqNfWAUOO0d1Us:'Hell und warm. Angenehm bei langen Texten',cgSgspJ2msm6clMCkdW9:'Verspielt und jung. Ideal für lustige Shorts',XrExE9yKIg1WjnnlVkGX:'Ruhige Alt-Stimme. Professionell',Xb7hH8MSUJpSbSDYk0k2:'Klar und freundlich, britisch',FGY2WhTYpPnrIDTdsKH5:'Quirlig und enthusiastisch'};
+var FALLBACK=[
+["JBFqnCBsd6RMkjVDRZzb","George - Warm, Captivating Storyteller","narrative_story","Warm resonance that instantly captivates listeners.","en","british","male"],
+["N2lVS1w4EtoT3dr4eOWO","Callum - Husky Trickster","characters_animation","Deceptively gravelly, yet unsettling edge.","en","american","male"],
+["nPczCjzI2devNBz1zQrb","Brian - Deep, Resonant and Comforting","social_media","Resonant and comforting. Great for narrations.","en","american","male"],
+["TX3LPaxmHKxFdv7VOQHJ","Liam - Energetic, Social Media Creator","social_media","Energy and warmth, suitable for reels and shorts.","en","american","male"],
+["SOYHLrjzK2X1ezoPC6cr","Harry - Fierce Warrior","characters_animation","An animated warrior ready to charge forward.","en","american","male"],
+["onwK4e9ZLuTAKqWW03F9","Daniel - Steady Broadcaster","informative_educational","A strong voice for a news story.","en","british","male"],
+["pqHfZKP75CvOlQylNhV4","Bill - Wise, Mature, Balanced","advertisement","Friendly voice ready to narrate your stories.","en","american","male"],
+["IKne3meq5aSn9XLyUdCD","Charlie - Deep, Confident, Energetic","conversational","Young Australian, confident and energetic.","en","australian","male"],
+["CwhRBWXzGAHq8TQ4Fs17","Roger - Laid-Back, Casual, Resonant","conversational","Easy going, casual.","en","american","male"],
+["pNInz6obpgDQGcFmaJgB","Adam - Dominant, Firm","social_media","Brash and openly confident.","en","american","male"],
+["cjVigY5qzO86Huf0OWal","Eric - Smooth, Trustworthy","conversational","Smooth tenor, man in his 40s.","en","american","male"],
+["iP95p4xoKVk53GoZ742B","Chris - Charming, Down-to-Earth","conversational","Natural and real.","en","american","male"],
+["bIHbv24MWmeRgasZH58o","Will - Relaxed Optimist","conversational","Conversational and laid back.","en","american","male"],
+["SAz9YHcvj6GT2YYXdXww","River - Relaxed, Neutral, Informative","conversational","Relaxed, neutral narration voice.","en","american","neutral"],
+["EXAVITQu4vr4xnSDxMaL","Sarah - Mature, Reassuring, Confident","entertainment_tv","Warm, mature, professional.","en","american","female"],
+["FGY2WhTYpPnrIDTdsKH5","Laura - Enthusiast, Quirky Attitude","social_media","Sunny enthusiasm, quirky attitude.","en","american","female"],
+["cgSgspJ2msm6clMCkdW9","Jessica - Playful, Bright, Warm","conversational","Playful, perfect for trendy content.","en","american","female"],
+["Xb7hH8MSUJpSbSDYk0k2","Alice - Clear, Engaging Educator","informative_educational","Clear, friendly, British.","en","british","female"],
+["XrExE9yKIg1WjnnlVkGX","Matilda - Knowledgable, Professional","informative_educational","Professional alto.","en","american","female"],
+["hpp4J3VqNfWAUOO0d1Us","Bella - Professional, Bright, Warm","informative_educational","Warm, bright, polished narration.","en","american","female"],
+["pFZP5JQG7iQjIQuC4Bku","Lily - Velvety Actress","informative_educational","Velvety British narration.","en","british","female"],
+["v3V1d2rk6528UrLKRuy8","Susi - Effortless and Confident","conversational","Deutsche Stimme.","de","standard","female"]
+].map(function(a){return{voiceId:a[0],name:a[1],category:a[2],description:a[3],language:a[4],accent:a[5],gender:a[6],previewUrl:null}});
+var voices=FALLBACK,sel=store.get('voice','pFZP5JQG7iQjIQuC4Bku'),cat='fem';
+var CATS=[['fem','💜 Frauen (Top)'],['rec','⭐ Empfohlen'],['story','📖 Erzähler'],['char','🎭 Charaktere'],['social','📱 Social'],['female','Weiblich'],['male','Männlich'],['other','🌍 Andere Sprachen'],['all','Alle']];
+var COLORS=['#7c5cff','#ff5d6c','#2fd39a','#f5b942','#3fa9ff','#ff7ad9','#00c2c7'];
+$('cats').innerHTML=CATS.map(function(c){return'<button class="chip" data-cat="'+c[0]+'">'+c[1]+'</button>'}).join('');
+$('cats').onclick=function(e){var b=e.target.closest('[data-cat]');if(b){cat=b.dataset.cat;renderVoices()}};
+function match(v){
+  if(cat==='other')return v.language!=='en';
+  if(v.language!=='en'&&cat!=='all')return false;
+  if(cat==='fem')return FEM.indexOf(v.voiceId)>=0;
+  if(cat==='rec')return REC[v.voiceId];
+  if(cat==='story')return /narrative|advertisement|informative/.test(v.category);
+  if(cat==='char')return /character/.test(v.category);
+  if(cat==='social')return /social|entertainment/.test(v.category);
+  if(cat==='female'||cat==='male')return v.gender===cat;
+  return true;
+}
+function renderVoices(){
+  document.querySelectorAll('[data-cat]').forEach(function(b){b.classList.toggle('on',b.dataset.cat===cat)});
+  var list=voices.filter(match);
+  if(cat==='fem')list.sort(function(a,b){return FEM.indexOf(a.voiceId)-FEM.indexOf(b.voiceId)});
+  $('voices').innerHTML=list.map(function(v,i){
+    var nm=v.name.split(' - ')[0],ds=FEMNOTE[v.voiceId]||v.name.split(' - ')[1]||v.description||'';
+    var meta=[v.gender==='male'?'♂':v.gender==='female'?'♀':'',v.accent,v.language!=='en'?v.language.toUpperCase():''].filter(Boolean).join(' · ');
+    return'<div class="v'+(v.voiceId===sel?' on':'')+'" data-v="'+esc(v.voiceId)+'"><div class="av" style="background:'+COLORS[(nm.charCodeAt(0)+nm.length)%COLORS.length]+'">'+esc(nm[0])+'</div><div class="i"><div class="n">'+esc(nm)+(FEM.indexOf(v.voiceId)>=0&&FEM.indexOf(v.voiceId)<3?'<span class="tag">TOP</span>':'')+(v.isCustom?'<span class="tag">DEINE</span>':'')+'</div><div class="d">'+esc(ds)+(meta?' · '+esc(meta):'')+'</div></div>'+(v.previewUrl?'<a class="pv" href="'+esc(v.previewUrl)+'" target="_blank" rel="noopener">▶ Probe</a>':'')+'</div>';
+  }).join('')||'<div class="sub" style="padding:12px;text-align:center">Keine Stimmen in dieser Kategorie.</div>';
+}
+$('voices').onclick=function(e){if(e.target.closest('a'))return;var b=e.target.closest('[data-v]');if(!b)return;sel=b.dataset.v;store.set('voice',sel);renderVoices();updGen()};
+
+/* ---------- vidIQ via mcp ---------- */
+var mcp=null,mcpDone=false,balance=null,busy=false;
+function call(tool,input){return mcp.callTool('vidIQ',tool,input||{}).then(function(r){var p=r&&('payload' in r)?r.payload:r;if(typeof p==='string'){try{p=JSON.parse(p)}catch(e){}}return p})}
+function errMsg(e){
+  var c=e&&e.code;
+  if(c==='server_not_connected')return'vidIQ ist in deinem Claude-Konto nicht verbunden.';
+  if(c==='not_granted'||c==='consent_denied')return'Zugriff auf vidIQ wurde nicht erlaubt.';
+  if(c==='rate_limited')return'Zu viele Anfragen, kurz warten.';
+  var m=(e&&(e.message||e.error))||'';
+  if(/credit|balance|insufficient/i.test(m))return'Zu wenig vidIQ-Credits.';
+  return'Fehler: '+(m||c||'unbekannt');
+}
+function showBal(){
+  var el=$('bal');
+  if(!mcp&&!mcpDone){el.className='bal';el.textContent='Verbinde mit vidIQ …';return}
+  if(!mcp){el.className='bal low';el.textContent='Studio braucht vidIQ. In dieser Ansicht nicht verfügbar. Nutze „Gratis vorhören“.';return}
+  if(!balance){el.className='bal';el.textContent='Guthaben wird geladen …';return}
+  var t=balance.totalCredits||0,reset=balance.renewableResetsAt?new Date(balance.renewableResetsAt).toLocaleDateString('de-CH'):'';
+  var chars=Math.floor(t/28)*1000;
+  el.className='bal'+(t<28?' low':'');
+  el.innerHTML='<b>'+t+' Credits</b> · reicht für ca. '+chars.toLocaleString('de-CH')+' Zeichen'+(reset?' · neue Credits am '+reset:'')+(t<28?'<br>Bis dahin: „Gratis vorhören“ nutzen.':'');
+}
+function loadBal(){if(!mcp)return;call('vidiq_balance').then(function(p){balance=p;showBal();updGen()}).catch(function(){})}
+function loadVoices(){
+  if(!mcp)return;
+  call('vidiq_voiceover_list_voices').then(function(p){
+    if(p&&Array.isArray(p.voices)&&p.voices.length){voices=p.voices;renderVoices()}
+  }).catch(function(){});
+}
+function updGen(){
+  var n=txt.value.trim().length,g=$('gen');
+  var sc=$('scenes').checked&&scenes().length>1;
+  g.textContent=busy?'Wird erstellt …':(sc?scenes().length+' MP3s erstellen':'MP3 erstellen')+(n?' · '+credits()+' Credits':'');
+  g.disabled=busy||!n||!mcp||n>(sc?20000:5000)||(balance&&balance.totalCredits<credits());
+  if(n>5000&&!sc)setSt('Max. 5000 Zeichen pro MP3. Aktiviere „Eine MP3 pro Szene“ für längere Texte.','err');
+}
+$('scenes').onchange=updGen;
+function setSt(t,c){var s=$('st');s.textContent=t||'';s.className='status'+(c?' '+c:'')}
+function findUrl(o){if(!o)return null;if(typeof o==='string')return/^https?:\/\//.test(o)?o:null;if(typeof o!=='object')return null;if(o.audioUrl)return o.audioUrl;for(var k in o){var u=findUrl(o[k]);if(u)return u}return null}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function poll(id,tries){
+  return sleep(3000).then(function(){return call('vidiq_job_poll',{mcpJobId:id})}).then(function(p){
+    var s=p&&p.status;
+    if(s==='completed')return p.result||p;
+    if(s==='failed'||s==='expired')throw{message:'Erstellung fehlgeschlagen'+(p.refunded?' (Credits zurückerstattet)':'')};
+    if(tries>60)throw{message:'Dauert zu lange. Später nochmals versuchen.'};
+    setSt('Stimme wird generiert … ('+(tries*3+3)+' Sek.)');
+    return poll(id,tries+1);
+  });
+}
+$('gen').onclick=function(){
+  if(busy||!mcp)return;
+  var v=voices.find(function(x){return x.voiceId===sel})||voices[0];
+  var sc=$('scenes').checked&&scenes().length>1;
+  var input={voiceId:v.voiceId};
+  if(sc)input.scriptLines=scenes();else input.script=txt.value.trim();
+  busy=true;updGen();$('wave').classList.add('on');setSt('Stimme wird generiert …');
+  call('vidiq_voiceover_generate',input).then(function(p){
+    if(p&&p.result)return p.result;
+    if(p&&p.mcpJobId)return poll(p.mcpJobId,0);
+    if(findUrl(p))return p;
+    throw{message:(p&&p.message)||'Keine Antwort erhalten'};
+  }).then(function(r){
+    var item={t:Date.now(),voice:v.name.split(' - ')[0],text:txt.value.trim().slice(0,80),url:r.audioUrl||findUrl(r),dur:r.durationSeconds||r.duration||null,lines:(r.lines||[]).map(function(l){return l.audioUrl}).filter(Boolean)};
+    var h=store.get('hist',[]);h.unshift(item);store.set('hist',h.slice(0,15));
+    renderOut();setSt('Fertig! Unten öffnen und speichern.','ok');loadBal();
+  }).catch(function(e){setSt(errMsg(e),'err')}).then(function(){busy=false;$('wave').classList.remove('on');updGen()});
+};
+function renderOut(){
+  var h=store.get('hist',[]);$('outCard').classList.toggle('hide',!h.length);
+  $('out').innerHTML=h.map(function(x){
+    var d=new Date(x.t);
+    return'<div class="res"><div class="t">'+esc(x.voice)+' · '+d.toLocaleDateString('de-CH')+' '+d.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})+(x.dur?' · '+Math.round(x.dur)+' Sek.':'')+'</div><div class="s">'+esc(x.text)+(x.text.length>=80?' …':'')+'</div><div class="links">'+(x.url?'<a href="'+esc(x.url)+'" target="_blank" rel="noopener">⬇ '+(x.lines.length?'Alles als 1 MP3':'MP3 öffnen')+'</a>':'')+x.lines.map(function(u,i){return'<a class="alt" href="'+esc(u)+'" target="_blank" rel="noopener">Szene '+(i+1)+'</a>'}).join('')+'</div></div>';
+  }).join('');
+}
+
+/* ---------- Free mode ---------- */
+var tts=null,cVoice=store.get('cvoice','airy'),synth=window.speechSynthesis||null,bVoices=[];
+var CV=[['airy','Airy','hell'],['glassy','Glassy','klar'],['buttery','Buttery','warm'],['rounded','Rounded','voll']];
+function setSt2(t,c){var s=$('st2');s.textContent=t||'';s.className='status'+(c?' '+c:'')}
+function engines(){
+  var o=[];if(tts)o.push(['claude','Claude-Stimmen (beste Qualität)']);if(synth)o.push(['browser','Geräte-Stimmen (überall)']);
+  var cur=$('engine').value||store.get('engine',o[0]&&o[0][0]);
+  $('engine').innerHTML=o.map(function(e){return'<option value="'+e[0]+'"'+(e[0]===cur?' selected':'')+'>'+e[1]+'</option>'}).join('');
+  if(!o.length){$('engine').innerHTML='<option>Keine Stimme verfügbar</option>';$('play').disabled=true}
+  engUI();
+}
+function engUI(){var e=$('engine').value;store.set('engine',e);$('claudeOpts').classList.toggle('hide',e!=='claude');$('browserOpts').classList.toggle('hide',e!=='browser')}
+$('engine').onchange=engUI;
+$('cVoices').innerHTML=CV.map(function(v){return'<button class="chip" data-cv="'+v[0]+'">'+v[1]+' · '+v[2]+'</button>'}).join('');
+function cvUI(){document.querySelectorAll('[data-cv]').forEach(function(b){b.classList.toggle('on',b.dataset.cv===cVoice)})}
+$('cVoices').onclick=function(e){var b=e.target.closest('[data-cv]');if(b){cVoice=b.dataset.cv;store.set('cvoice',cVoice);cvUI()}};cvUI();
+function loadBVoices(){
+  if(!synth)return;bVoices=synth.getVoices()||[];if(!bVoices.length)return;
+  var langs={};bVoices.forEach(function(v){langs[v.lang.slice(0,2)]=1});
+  var names={de:'Deutsch',en:'Englisch',fr:'Französisch',it:'Italienisch',es:'Spanisch',pt:'Portugiesisch'};
+  var cur=store.get('blang',langs.en?'en':Object.keys(langs)[0]);
+  $('bLang').innerHTML=Object.keys(langs).sort(function(a,b){return(names[b]?1:0)-(names[a]?1:0)||a.localeCompare(b)}).map(function(l){return'<option value="'+l+'"'+(l===cur?' selected':'')+'>'+(names[l]||l.toUpperCase())+'</option>'}).join('');
+  fillBV();
+}
+var FEMN=/\b(ava|zoe|serena|samantha|allison|susan|kate|karen|moira|tessa|fiona|victoria|nicky|joelle|noelle|ellen|anna|petra|helena|marlene|vicki|yelda|amelie|aurelie|audrey|alice|federica|paola|monica|paulina|sara|siri female|female|woman|aria|jenny|sonia|libby|natasha|clara|emma|olivia|michelle|ana|elsa|katja|hedda|zira|hazel|heera|catherine|kathy|shelley|flo|sandy|grandma|martha|nora|lekha|veena|ting|mei|yuna|kyoko|sora|milena|katya|ioana|laura|lucia|monica|amira|tara|neerja|seoyeon|salli|kimberly|kendra|joanna|ivy|ruth|danielle|stephanie|isha)\b/i;
+var MALN=/\b(alex|daniel|fred|tom|aaron|arthur|evan|nathan|oliver|gordon|lee|rishi|reed|ralph|albert|bruce|junior|eddy|rocko|thomas|jacques|luca|diego|jorge|juan|markus|yannick|xander|male|man|guy|ryan|david|mark|george|james|matthew|brian|joey|justin|kevin|stephen|aditya|siri male)\b/i;
+function gOf(v){return FEMN.test(v.name)?'f':MALN.test(v.name)?'m':'?'}
+function qOf(v){return /premium|enhanced|natural|neural|online|wavenet|studio/i.test(v.name)?2:/google|siri|microsoft/i.test(v.name)?1:0}
+var bG=store.get('bgen','f');
+function fillBV(){
+  var l=$('bLang').value;store.set('blang',l);var cur=store.get('bvoice','');
+  document.querySelectorAll('[data-g]').forEach(function(b){b.classList.toggle('on',b.dataset.g===bG)});
+  var all=bVoices.filter(function(v){return v.lang.slice(0,2)===l});
+  var list=all.filter(function(v){return bG==='a'||gOf(v)===bG||(bG==='f'&&gOf(v)==='?'&&qOf(v)>0)});
+  list.sort(function(a,b){return qOf(b)-qOf(a)||(gOf(a)==='f'?-1:1)});
+  if(bG!=='a'&&list.some(function(v){return qOf(v)===2}))list=list.filter(function(v){return qOf(v)===2});
+  if(!cur||!list.some(function(v){return v.name===cur})){cur=list[0]&&list[0].name;if(cur)store.set('bvoice',cur)}
+  $('bList').innerHTML=list.map(function(v){
+    var nm=v.name.replace(/\s*\((Premium|Enhanced|Erweitert)\)/i,''),q=qOf(v);
+    return'<div class="v'+(v.name===cur?' on':'')+'" data-bv="'+esc(v.name)+'"><div class="av" style="background:'+(gOf(v)==='f'?'#b05cff':gOf(v)==='m'?'#3fa9ff':'#555')+'">'+esc(nm[0])+'</div><div class="i"><div class="n">'+esc(nm)+(q===2?'<span class="tag">★ PREMIUM</span>':q===1?'<span class="tag">★</span>':'')+'</div><div class="d">'+esc(v.lang)+(v.localService===false?' · online':'')+'</div></div><button class="pv" data-try="'+esc(v.name)+'" style="border:0;font:inherit;font-size:12px;cursor:pointer">▶ Probe</button></div>';
+  }).join('')||'<div class="sub" style="padding:12px;text-align:center">Keine passenden Stimmen. Tippe auf „Alle“ oder lade unten bessere Stimmen.</div>';
+  var hasPrem=all.some(function(v){return qOf(v)===2&&gOf(v)!=='m'});
+  $('bHint').innerHTML=hasPrem?'Nur Premium-Stimmen werden gezeigt. „Alle“ zeigt auch die einfachen.':'⚠️ Hier sind nur einfache Stimmen verfügbar. Beste Gratis-Lösung: diese Seite am <b>PC im Browser Microsoft Edge</b> öffnen. Dort erscheinen echt klingende Stimmen wie <b>Ava, Emma oder Jenny (Online Natural)</b>.';
+}
+$('bGen').onclick=function(e){var b=e.target.closest('[data-g]');if(b){bG=b.dataset.g;store.set('bgen',bG);fillBV()}};
+$('bList').onclick=function(e){
+  var t=e.target.closest('[data-try]');
+  if(t){var v=bVoices.find(function(x){return x.name===t.dataset.try});if(!v||!synth)return;synth.cancel();
+    var u=new SpeechSynthesisUtterance(v.lang.indexOf('de')===0?'Hallo! So klinge ich, wenn ich deine Geschichte erzähle.':v.lang.indexOf('en')===0?'Hey! This is how I sound when I tell your story. Pretty cool, right?':'Hello!');
+    u.voice=v;u.lang=v.lang;u.rate=+$('rate').value;u.pitch=+$('pitch').value;synth.speak(u);return}
+  var b=e.target.closest('[data-bv]');if(b){store.set('bvoice',b.dataset.bv);fillBV()}
+};
+$('bLang').onchange=fillBV;
+if(synth){loadBVoices();synth.onvoiceschanged=loadBVoices}
+$('rate').oninput=function(){$('rateV').textContent=(+this.value).toFixed(2);if(tts&&tts.setRate&&$('engine').value==='claude')tts.setRate(+this.value)};
+$('pitch').oninput=function(){$('pitchV').textContent=(+this.value).toFixed(1)};
+function playing(on){$('wave2').classList.toggle('on',on);$('stop').classList.toggle('hide',!on);$('play').textContent=on?'▶ Neu starten':'▶ Abspielen'}
+$('rateV').textContent='0.95';
+$('play').onclick=function(){
+  var t=txt.value.trim();if(!t){setSt2('Zuerst Text eingeben.','err');return}
+  var e=$('engine').value,rate=+$('rate').value;setSt2('');
+  if(e==='claude'&&tts){
+    var lines=scenes().map(function(s){return{text:s.slice(0,2000),voice:cVoice,rate:rate}}).slice(0,100);
+    tts.speak(lines).then(function(){setSt2('Fertig.','ok')}).catch(function(err){
+      var c=err&&err.code;
+      if(c==='not_granted'){tts=null;engines();setSt2('Claude-Stimmen sind für diese Seite ausgeschaltet.','err')}
+      else if(c==='stopped')setSt2('');
+      else if(c==='rate_limited')setSt2('Zu viel auf einmal, kurz warten.','err');
+      else setSt2('Konnte nicht abspielen ('+(c||'Fehler')+').','err');
+    });
+  }else if(synth){
+    synth.cancel();
+    var v=bVoices.find(function(x){return x.name===store.get('bvoice','')});
+    var parts=t.match(/[^.!?\n]+[.!?]*|\n+/g)||[t];var chunks=[],buf='';
+    parts.forEach(function(p){if((buf+p).length>220){if(buf.trim())chunks.push(buf);buf=p}else buf+=p});if(buf.trim())chunks.push(buf);
+    chunks.forEach(function(c,i){var u=new SpeechSynthesisUtterance(c);if(v){u.voice=v;u.lang=v.lang}u.rate=rate;u.pitch=+$('pitch').value;
+      if(i===0)u.onstart=function(){playing(true)};if(i===chunks.length-1)u.onend=function(){playing(false)};u.onerror=function(){playing(false)};synth.speak(u)});
+    playing(true);
+  }
+};
+$('stop').onclick=function(){if(tts&&$('engine').value==='claude')tts.stop().catch(function(){});if(synth)synth.cancel();playing(false)};
+
+/* ---------- AI text helpers ---------- */
+var sample=null;
+var PROMPTS={
+  speak:'Rewrite this narration script so it sounds natural when read aloud by a text-to-speech voice: short sentences, clear punctuation for pauses, numbers written as words, no emojis or symbols. Keep the language, meaning and length. Keep blank lines between scenes.',
+  hook:'Rewrite only the opening of this YouTube Shorts narration so the first 1-2 sentences are a gripping hook that makes viewers stay. Keep the rest unchanged. Keep the language and blank lines between scenes.',
+  en:'Translate this narration script into natural, punchy spoken English suitable for a YouTube Shorts voiceover. Keep blank lines between scenes.',
+  short:'Shorten this narration script so it can be read aloud in about 55-60 seconds (about 140-150 words). Keep the hook, the key story beats and the ending punchline. Keep the language. Keep blank lines between scenes.'
+};
+$('aiBox').onclick=function(e){
+  var b=e.target.closest('[data-ai]');if(!b||!sample)return;var t=txt.value.trim();if(!t){setSt('Zuerst Text eingeben.','err');return}
+  var all=document.querySelectorAll('[data-ai]');all.forEach(function(x){x.disabled=true});var old=b.textContent;b.textContent='Denke nach …';
+  sample(PROMPTS[b.dataset.ai]+'\nReply with ONLY the rewritten script, nothing else.\n\nSCRIPT:\n'+t,{modelTier:'default'}).then(function(r){
+    var out=(r&&r.text||'').trim();if(out){store.set('undo',t);txt.value=out;updCount()}
+  }).catch(function(err){setSt(err&&err.code==='rate_limited'?'Kurz warten, dann nochmals.':'Textverbesserung ging nicht.','err')})
+  .then(function(){all.forEach(function(x){x.disabled=false});b.textContent=old});
+};
+
+/* ---------- Init ---------- */
+updCount();renderVoices();renderOut();engines();showBal();
+if(window.claude&&window.claude.use){
+  window.claude.use('mcp').then(function(m){mcp=m;mcpDone=true;showBal();updGen();if(m){loadBal();loadVoices()}}).catch(function(){mcpDone=true;showBal()});
+  window.claude.use('tts').then(function(t){tts=t;if(t){t.onState(function(s){playing(s.state!=='idle')});if(t.setRate)t.setRate(+$('rate').value)}engines()}).catch(function(){});
+  window.claude.use('sample').then(function(s){sample=s;$('aiBox').classList.toggle('hide',!s)}).catch(function(){});
+}else{mcpDone=true;setTimeout(showBal,0);document.querySelector('[data-mode="free"]').click();}
+setTimeout(function(){if(!mcp){mcpDone=true;showBal()}},11000);
+})();
+</script>
+</body>
+</html>
